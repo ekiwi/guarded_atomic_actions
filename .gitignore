@@ -1,0 +1,7 @@
+# Scala
+/project/
+/target/
+
+
+# Intellij Idea
+/.idea/
