@@ -1,16 +1,69 @@
-package main.scala
+package main
 
 
-case class StateElement(name: String) {
-    override def toString: String = s"$name"
+import chisel3._
+import chisel3.util._
+
+import scala.collection.immutable.ListMap
+
+object ListBundle {
+    def apply(el: ListMap[String, Data]): Record = {
+        new Record {
+            val elements: ListMap[String, Data] = el
+            override def cloneType : this.type = {
+                throw new Exception(s"Cloning not supported until someone explains to me what it's for!")
+                this
+            }
+        }
+    }
+}
+
+
+
+
+/*
+ Out Interface class needs to extend Module because we want the implementations to directly
+ derive from it.
+ */
+abstract class Interface extends Module {
+    lazy val io = {
+
+
+
+
+        IO(ListBundle(ListMap(
+            "clock" -> Input(Clock())
+        )))
+    }
+}
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+abstract class IGcd[T <: Data] extends Interface {
+    // method Action
+    def start(a: T, b: T): Unit
+
+    // method Value
+    def result(): T
 }
 
 
 
 object Main {
     def main(args: Array[String]): Unit = {
-        val s = StateElement("test")
-        print(s"Hello World: $s")
+
+
+
+        val b = new Bundle() {
+            val data = Input(UInt(32.W))
+        }
+
+        println(s"${b}")
+
+
+
+
     }
 }
 
