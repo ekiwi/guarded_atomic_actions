@@ -25,29 +25,57 @@ object ListBundle {
  Out Interface class needs to extend Module because we want the implementations to directly
  derive from it.
  */
-abstract class Interface extends Module {
+class Interface extends Module {
     lazy val io = {
 
-
-
-
+        println("io called!")
         IO(ListBundle(ListMap(
             "clock" -> Input(Clock())
         )))
     }
 }
 
+object guard {
+    // single parameter list in order to support overloading on the block return type
+    def apply (cond: => Bool, block: => Unit): Unit = {
+        when(cond)(block)
+    }
+
+    def apply[T <: Data](cond: => Bool, block: => T): T = {
+        var typ : Option[T] = None
+        lazy val result = Wire(typ.get)
+        when(cond){
+            val tmp = block
+            typ = Some(tmp.cloneType)
+            result := tmp
+        }
+        result
+    }
+}
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
-abstract class IGcd[T <: Data] extends Interface {
+abstract class IGcd extends Interface {
     // method Action
-    def start(a: T, b: T): Unit
+    def start(a: UInt, b: UInt): Unit
 
     // method Value
-    def result(): T
+    def result(): UInt
 }
 
+
+class Gcd extends IGcd {
+    val x = RegInit(0.U(32.W))
+    val y = RegInit(0.U(32.W))
+
+
+    override def start(a: UInt, b: UInt) =
+        guard(y === 0.U, { x := a; y := b })
+
+    override def result(): UInt =
+        guard(y === 0.U, { x })
+}
 
 
 object Main {
@@ -62,6 +90,7 @@ object Main {
         println(s"${b}")
 
 
+        val i = Module(new Gcd)
 
 
     }
