@@ -72,6 +72,9 @@ class Gcd extends IGcd {
 
     override def result(): UInt =
         guard(y === 0.U, { x })
+
+    // TODO: make a Module(...) like wrapper that evaluates `io`
+    io
 }
 
 
