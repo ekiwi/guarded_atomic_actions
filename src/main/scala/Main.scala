@@ -10,10 +10,7 @@ object ListBundle {
     def apply(el: ListMap[String, Data]): Record = {
         new Record {
             val elements: ListMap[String, Data] = el
-            override def cloneType : this.type = {
-                throw new Exception(s"Cloning not supported until someone explains to me what it's for!")
-                this
-            }
+            override def cloneType : this.type = { ListBundle(elements).asInstanceOf[this.type] }
         }
     }
 }
