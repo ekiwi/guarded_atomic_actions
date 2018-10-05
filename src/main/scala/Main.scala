@@ -67,7 +67,7 @@ class Gcd extends IGcd {
     val y = RegInit(0.U(32.W))
 
 
-    override def start(a: UInt, b: UInt) =
+    override def start(a: UInt, b: UInt): Unit =
         guard(y === 0.U, { x := a; y := b })
 
     override def result(): UInt =
