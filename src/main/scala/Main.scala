@@ -87,7 +87,9 @@ object Main {
         println(s"${b}")
 
 
-        val i = Module(new Gcd)
+        val ir = chisel3.Driver.elaborate(() => new Gcd)
+        val firrtl = chisel3.Driver.emit(ir)
+        println(firrtl)
 
 
     }
