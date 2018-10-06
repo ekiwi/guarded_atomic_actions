@@ -15,7 +15,20 @@ object ListBundle {
     }
 }
 
-
+object Introspection {
+    def getPublicFields(cc: Class[_], rootClass: Class[_]): Seq[java.lang.reflect.Method] = {
+        // Suggest names to nodes using runtime reflection
+        def getValNames(c: Class[_]): Set[String] = {
+            if (c == rootClass) Set()
+            else getValNames(c.getSuperclass) ++ c.getDeclaredFields.map(_.getName)
+        }
+        val valNames = getValNames(cc)
+        def isPublicVal(m: java.lang.reflect.Method) =
+            m.getParameterTypes.isEmpty && valNames.contains(m.getName) && !m.getDeclaringClass.isAssignableFrom(rootClass)
+        //cc.getMethods.filter(isPublicVal).sortWith(_.getName < _.getName)
+        cc.getDeclaredMethods
+    }
+}
 
 
 /*
@@ -26,6 +39,7 @@ class Interface extends Module {
     lazy val io = {
 
         println("io called!")
+        println(Introspection.getPublicFields(this.getClass, classOf[Interface]).map(_.getName))
         IO(ListBundle(ListMap(
             "clock" -> Input(Clock())
         )))
