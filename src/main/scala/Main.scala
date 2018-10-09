@@ -3,7 +3,7 @@ package main
 
 import chisel3._
 import chisel3.util._
-
+import org.scalacheck.Prop.True
 import scala.collection.immutable.ListMap
 
 object ListBundle {
@@ -16,17 +16,42 @@ object ListBundle {
 }
 
 object Introspection {
+
+    def isInterface(meth: java.lang.reflect.Method) = {
+        (meth.getModifiers & java.lang.reflect.Modifier.ABSTRACT) != 0 &&
+        (meth.getModifiers & java.lang.reflect.Modifier.PUBLIC) != 0
+    }
+
     def getPublicFields(cc: Class[_], rootClass: Class[_]): Seq[java.lang.reflect.Method] = {
         // Suggest names to nodes using runtime reflection
-        def getValNames(c: Class[_]): Set[String] = {
-            if (c == rootClass) Set()
-            else getValNames(c.getSuperclass) ++ c.getDeclaredFields.map(_.getName)
+        def getMethods(c: Class[_]): List[java.lang.reflect.Method] = {
+            if (c == rootClass) List()
+            else getMethods(c.getSuperclass) ++ c.getDeclaredMethods
         }
-        val valNames = getValNames(cc)
-        def isPublicVal(m: java.lang.reflect.Method) =
-            m.getParameterTypes.isEmpty && valNames.contains(m.getName) && !m.getDeclaringClass.isAssignableFrom(rootClass)
-        //cc.getMethods.filter(isPublicVal).sortWith(_.getName < _.getName)
-        cc.getDeclaredMethods
+        val methods : List[java.lang.reflect.Method] = getMethods(cc)
+        val interface_names = methods.filter(isInterface).map(_.getName).toSet
+
+        methods.foreach( (meth) => {
+            val name = meth.getName
+            val keep = !isInterface(meth) && interface_names.contains(name)
+            if (keep) {
+
+                println(meth.getName)
+                println(meth)
+                println(meth.getModifiers)
+                println()
+            }
+        })
+        //    println(_.getName)
+        //}
+
+        List()
+//        def isPublicVal(m: java.lang.reflect.Method) =
+//            m.getParameterTypes.isEmpty && methodNames.contains(m.getName) && !m.getDeclaringClass.isAssignableFrom(rootClass)
+//        //cc.getMethods.filter(isPublicVal).sortWith(_.getName < _.getName)
+//        for meth <-
+//        println(methodNames)
+//        cc.getDeclaredMethods
     }
 }
 
@@ -39,7 +64,8 @@ class Interface extends Module {
     lazy val io = {
 
         println("io called!")
-        println(Introspection.getPublicFields(this.getClass, classOf[Interface]).map(_.getName))
+        //println(Introspection.getPublicFields(this.getClass, classOf[Interface]).map(_.getName))
+        Introspection.getPublicFields(this.getClass, classOf[Interface])
         IO(ListBundle(ListMap(
             "clock" -> Input(Clock())
         )))
