@@ -15,6 +15,7 @@ object ListBundle {
     }
 }
 
+
 object Introspection {
 
     def isInterface(meth: java.lang.reflect.Method) = {
@@ -29,16 +30,25 @@ object Introspection {
             else getMethods(c.getSuperclass) ++ c.getDeclaredMethods
         }
         val methods : List[java.lang.reflect.Method] = getMethods(cc)
-        val interface_names = methods.filter(isInterface).map(_.getName).toSet
+        val interfaces = methods.filter(isInterface)
+        val interface_names = interfaces.map(_.getName).toSet
 
         methods.foreach( (meth) => {
             val name = meth.getName
             val keep = !isInterface(meth) && interface_names.contains(name)
             if (keep) {
 
+                val has_value = meth.getReturnType.toString != "void"
+                val has_args = meth.getParameterCount > 0
+
                 println(meth.getName)
                 println(meth)
                 println(meth.getModifiers)
+                println(meth.getReturnType)
+                println(meth.getParameterTypes)
+                println(meth.getAnnotations)
+                println(s"has_value: $has_value")
+                println(s"has_args: $has_args")
                 println()
             }
         })
@@ -97,7 +107,7 @@ abstract class IGcd extends Interface {
     // method Action
     def start(a: UInt, b: UInt): Unit
 
-    // method Value
+    // method ValueAction
     def result(): UInt
 }
 
