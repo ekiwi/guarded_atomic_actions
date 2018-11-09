@@ -1,6 +1,3 @@
-package main
-
-
 import chisel3._
 import chisel3.util._
 
@@ -15,11 +12,10 @@ class ReferenceGcd(width: Int) extends Module {
             val b = UInt(width.W)
         }))
         // result value method IO
-        val result = new Bundle {
-            val ready = Output(Bool())
-            val data = Output(UInt(width.W))
-        }
+        val result = Valid(UInt(width.W))
     })
+
+    io.result.bits := DontCare
 
     // helper function
     def implies(a: Bool, b: Bool) : Bool = !a || b
@@ -64,9 +60,9 @@ class ReferenceGcd(width: Int) extends Module {
     val result_firing = Wire(Bool())
     assert(implies(result_firing, result_can_fire))
     when (result_firing) {
-        io.result.data := x
+        io.result.bits := x
     }
-    io.result.ready := result_can_fire
+    io.result.valid := result_can_fire
     result_firing := true.B
 
     // scheduler

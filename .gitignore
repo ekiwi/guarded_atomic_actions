@@ -5,3 +5,6 @@
 
 # Intellij Idea
 /.idea/
+
+# chisel testers
+/test_run_dir/
