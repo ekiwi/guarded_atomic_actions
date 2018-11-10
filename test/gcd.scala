@@ -4,7 +4,7 @@
 import org.scalatest._
 import chisel3._
 import chisel3.iotesters._
-
+import java.io.File
 
 object GCDCalculator {
     def computeGcdResultsAndCycles(a: Int, b: Int, depth: Int = 1): (Int, Int) = {
@@ -42,8 +42,13 @@ class GCDSpec extends FlatSpec with Matchers {
 
     val width = 16
 
-    it should "compute gcd excellently" in {
-        iotesters.Driver.execute(() => new ReferenceGcd(width), new TesterOptionsManager) { c =>
+   it should "compute gcd excellently" in {
+       val manager = new TesterOptionsManager {
+           testerOptions = testerOptions.copy(backendName = "firrtl", testerSeed = 7L)
+           interpreterOptions = interpreterOptions.copy(setVerbose = false, writeVCD = true)
+           commonOptions = commonOptions.copy(targetDirName="test_run_dir", topName = "gcd")
+       }
+        iotesters.Driver.execute(() => new ReferenceGcd(width), manager) { c =>
             new GCDPeekPokeTester(c)
         } should be(true)
     }
