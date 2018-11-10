@@ -53,7 +53,8 @@ class ReferenceGcd(width: Int) extends Module {
         y := io.start.bits.b
     }
     io.start.ready := start_can_fire
-    start_firing := io.start.valid
+    // start_firing := io.start.valid
+    start_firing := io.start.valid && start_can_fire
 
     // method: result
     val result_can_fire = !is_active
@@ -63,7 +64,9 @@ class ReferenceGcd(width: Int) extends Module {
         io.result.bits := x
     }
     io.result.valid := result_can_fire
-    result_firing := true.B
+    result_firing := true.B && result_can_fire
+
+    // TODO: result should not be read in the same cycle that start is executed in....
 
     // scheduler
     // input:
