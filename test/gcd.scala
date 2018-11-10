@@ -13,18 +13,26 @@ object GCDCalculator {
 }
 
 class GCDPeekPokeTester(c: ReferenceGcd) extends PeekPokeTester(c)  {
+    // reset GCD
+    reset()
+    poke(c.io.start.valid, 0)
+    step(1)
+
     for {
         i <- 1 to 10
         j <- 1 to 10
     } {
+
         val (gcd_value, _) = GCDCalculator.computeGcdResultsAndCycles(i, j)
+        println(s"GCD($i, $j) = $gcd_value")
 
         poke(c.io.start.bits.a, i)
         poke(c.io.start.bits.b, j)
         poke(c.io.start.valid, 1)
+        step(1)
 
         var count = 0
-        while(peek(c.io.result.valid) == BigInt(0) && count < 20) {
+        while(peek(c.io.result.valid) == BigInt(0) && count <= 30) {
             step(1)
             count += 1
         }
@@ -32,6 +40,8 @@ class GCDPeekPokeTester(c: ReferenceGcd) extends PeekPokeTester(c)  {
             // println(s"Waited $count cycles on gcd inputs $i, $j, giving up")
             System.exit(0)
         }
+        println(s"---> ${count} steps")
+        expect(c.io.result.valid, 1)
         expect(c.io.result.bits, gcd_value)
         step(1)
     }
@@ -45,7 +55,7 @@ class GCDSpec extends FlatSpec with Matchers {
    it should "compute gcd excellently" in {
        val manager = new TesterOptionsManager {
            testerOptions = testerOptions.copy(backendName = "firrtl", testerSeed = 7L)
-           interpreterOptions = interpreterOptions.copy(setVerbose = false, writeVCD = true)
+           interpreterOptions = interpreterOptions.copy(setVerbose = false, writeVCD = true, showFirrtlAtLoad = true)
            commonOptions = commonOptions.copy(targetDirName="test_run_dir", topName = "gcd")
        }
         iotesters.Driver.execute(() => new ReferenceGcd(width), manager) { c =>
