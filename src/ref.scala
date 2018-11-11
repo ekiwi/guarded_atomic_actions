@@ -83,14 +83,3 @@ class ReferenceGcd(width: Int) extends Module {
     assert(implies(swap_firing, not_any(Seq(subtract_firing, start_firing))))
     assert(implies(subtract_firing, not_any(Seq(swap_firing, start_firing))))
 }
-
-
-object Main {
-    def main(args: Array[String]): Unit = {
-
-
-        val ir = chisel3.Driver.elaborate(() => new ReferenceGcd(4))
-        val firrtl = chisel3.Driver.emit(ir)
-        println(firrtl)
-    }
-}
