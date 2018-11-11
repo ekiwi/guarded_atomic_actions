@@ -24,12 +24,12 @@ class GCDPeekPokeTester(c: ReferenceGcd) extends PeekPokeTester(c)  {
     } {
 
         val (gcd_value, _) = GCDCalculator.computeGcdResultsAndCycles(i, j)
-        println(s"GCD($i, $j) = $gcd_value")
 
         poke(c.io.start.bits.a, i)
         poke(c.io.start.bits.b, j)
         poke(c.io.start.valid, 1)
         step(1)
+        poke(c.io.start.valid, 0)
 
         var count = 0
         while(peek(c.io.result.valid) == BigInt(0) && count <= 30) {
@@ -40,7 +40,6 @@ class GCDPeekPokeTester(c: ReferenceGcd) extends PeekPokeTester(c)  {
             // println(s"Waited $count cycles on gcd inputs $i, $j, giving up")
             System.exit(0)
         }
-        println(s"---> ${count} steps")
         expect(c.io.result.valid, 1)
         expect(c.io.result.bits, gcd_value)
         step(1)
