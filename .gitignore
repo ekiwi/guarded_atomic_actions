@@ -8,3 +8,8 @@
 
 # chisel testers
 /test_run_dir/
+
+# Chisel compiler
+*.v
+*.fir
+*.json
