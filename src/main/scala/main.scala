@@ -77,6 +77,11 @@ class ReferenceGcd(width: Int) extends Module {
     }
     val firing = priority_scheduler(can_will.map(_._1))
     can_will.map(_._2).zip(firing).foreach{case (lhs: Bool, rhs: Bool) => lhs := rhs}
+
+    // all rules should be mutually exclusive
+    def not_any(signals: Seq[Bool]): Bool = !signals.reduce(_ || _)
+    assert(implies(swap_firing, not_any(Seq(subtract_firing, start_firing))))
+    assert(implies(subtract_firing, not_any(Seq(swap_firing, start_firing))))
 }
 
 
