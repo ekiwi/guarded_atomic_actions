@@ -108,6 +108,19 @@ class GaaModule extends Module {
         r
     }
 
+    private var _state : Array[Data] = Array.empty[Data]
+
+    def register_state[D<:Data](name: String, reg: D): Int = {
+        reg.suggestName(name)
+        val index = _state.length
+        _state = _state ++ Array(reg.asInstanceOf[Data])
+        index
+    }
+
+    def state[D<:Data](index: Int, _match: D) : D = {
+        _state(index).asInstanceOf[D]
+    }
+
     def rule(name: String)= {
         add_rule(new Rule(this, name))
     }
