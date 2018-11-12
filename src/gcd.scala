@@ -26,4 +26,6 @@ class GuardedAtomicActionGcd(width: Int) extends GaaModule {
     value ("result", UInt(width.W)) .when(!is_active) {
         x
     }
+
+    end
 }

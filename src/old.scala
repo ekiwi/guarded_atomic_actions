@@ -5,15 +5,8 @@ import chisel3.util._
 import org.scalacheck.Prop.True
 import scala.collection.immutable.ListMap
 
-object ListBundle {
-    def apply(el: ListMap[String, Data]): Record = {
-        new Record {
-            val elements: ListMap[String, Data] = el
-            override def cloneType : this.type = { ListBundle(elements).asInstanceOf[this.type] }
-        }
-    }
-}
 
+import gaa.ListBundle
 
 object Introspection {
 
