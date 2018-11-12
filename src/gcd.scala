@@ -1,5 +1,5 @@
+import gaa.GaaModule
 import chisel3._
-import chisel3.util._
 
 class GuardedAtomicActionGcd(width: Int) extends GaaModule {
     // state elements
@@ -23,7 +23,7 @@ class GuardedAtomicActionGcd(width: Int) extends GaaModule {
         y := arg("b")
     }
 
-    value ("result") .when(!is_active) {
+    value ("result", UInt(width.W)) .when(!is_active) {
         x
     }
 }
