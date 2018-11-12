@@ -36,7 +36,7 @@ class GCDPeekPokeTester(c: ReferenceGcd) extends PeekPokeTester(c)  {
             step(1)
             count += 1
         }
-        if(count > 30) {
+        if(count > 300) {
             // println(s"Waited $count cycles on gcd inputs $i, $j, giving up")
             System.exit(0)
         }
@@ -51,10 +51,12 @@ class GCDSpec extends FlatSpec with Matchers {
 
     val width = 16
 
+    val print_firrtl = false
+
    it should "compute gcd excellently" in {
        val manager = new TesterOptionsManager {
            testerOptions = testerOptions.copy(backendName = "firrtl", testerSeed = 7L)
-           interpreterOptions = interpreterOptions.copy(setVerbose = false, writeVCD = true, showFirrtlAtLoad = true)
+           interpreterOptions = interpreterOptions.copy(setVerbose = false, writeVCD = true, showFirrtlAtLoad = print_firrtl)
            commonOptions = commonOptions.copy(targetDirName="test_run_dir", topName = "gcd")
        }
         iotesters.Driver.execute(() => new ReferenceGcd(width), manager) { c =>
