@@ -36,6 +36,7 @@ class Value(parent: GaaModule, _name: String, typ: Data) extends RuleBase(parent
     val valid = Wire(Bool()).suggestName(s"${name}_valid")
     val bits = Wire(typ).suggestName(s"${name}_bits")
 
+    bits := DontCare
     valid := can_fire
     firing := true.B && can_fire
 
