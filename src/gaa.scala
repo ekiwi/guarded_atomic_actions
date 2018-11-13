@@ -14,7 +14,12 @@ object ListBundle {
     }
 }
 
-private[gaa] case class State(name: String, reg: Data)
+class State[+D<:Data](_name: String, _reg: D, index: Int, parent: GaaModule) {
+    private[gaa] val name = _name
+    private[gaa] val reg = _reg
+    def read : D = parent.active_rule.get.state_in(index).asInstanceOf[D]
+    def write[W<:Data](value: W) : Unit = { parent.active_rule.get.state_out(index) := value }
+}
 
 abstract class RuleBase(parent: GaaModule, _name: String) {
     val name = _name
@@ -22,32 +27,22 @@ abstract class RuleBase(parent: GaaModule, _name: String) {
     val can_fire = Wire(Bool()).suggestName(s"${name}_can_fire")
 
     def make_wires(prefix: String) = parent._state.map{
-        case State(s_name, reg) => Wire(reg.cloneType).suggestName(s"${name}_${prefix}${s_name}")
+        case s : State[Data] => Wire(s.reg.cloneType).suggestName(s"${name}_${prefix}${s.name}")
     }
     val state_in = make_wires("in_")
-    val state_tmp = make_wires("")
     val state_out = make_wires("out_")
 
     def implies(a: Bool, b: Bool) : Bool = !a || b
     assert(implies(firing, can_fire))
 
-    private def connect_in = {
-        state_tmp.zip(state_in).foreach { case (tmp, in) => tmp := in }
-    }
-
-    private def connect_out = {
-        state_tmp.zip(state_out).foreach { case (tmp, out) => out := tmp }
-    }
-
     protected def start(cond: => Bool) = {
-        connect_in
+        state_out.zip(state_in).foreach { case (out, in) => out := in }
         parent.active_rule = Some(this)
         can_fire := cond
     }
 
     protected def end = {
         parent.active_rule = None
-        connect_out
     }
 }
 
@@ -133,19 +128,24 @@ class GaaModule extends Module {
         r
     }
 
+    private[gaa] var _state : Array[State[Data]] = Array.empty[State[Data]]
 
-    private[gaa] var _state : Array[State] = Array.empty[State]
+    def Reg[D<:Data](name: String, typ: D) = {
+        add_state(name, chisel3.Reg(typ))
+    }
 
-    def register_state[D<:Data](name: String, reg: D): Int = {
+    def RegInit[D<:Data](name: String, value: D) = {
+        add_state(name, chisel3.RegInit(value))
+    }
+
+    private def add_state[D<:Data](name: String, reg: D) = {
         reg.suggestName(name)
         val index = _state.length
-        _state = _state ++ Array(State(name, reg.asInstanceOf[Data]))
-        index
+        val new_state = new State(name, reg, index, this)
+        _state = _state ++ Array(new_state)
+        new_state
     }
 
-    def get_state[D<:Data](index: Int, _match: D) : D = {
-        active_rule.get.state_tmp(index).asInstanceOf[D]
-    }
 
     def rule(name: String)= {
         add_rule(new Rule(this, name))

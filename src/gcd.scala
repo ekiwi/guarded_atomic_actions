@@ -3,36 +3,28 @@ import chisel3._
 
 class GuardedAtomicActionGcd(width: Int) extends GaaModule {
     // state elements
-
-    // TODO: write a macro
-    private val _x_reg = Reg(UInt(width.W))
-    private val _x_index = register_state("x", _x_reg)
-    def x = get_state(_x_index, _x_reg)
-
-    private val _y_reg = RegInit(0.U(width.W))
-    private val _y_index = register_state("y", _y_reg)
-    def y = get_state(_y_index, _y_reg)
-
+    val x = Reg("x", UInt(width.W))
+    val y = RegInit("y", 0.U(width.W))
 
     // helper expression
-    def is_active : Bool = y =/= 0.U
+    def is_active : Bool = y.read =/= 0.U
 
-    rule ("swap") .when(x > y && is_active) {
-        x := y
-        y := x
+    rule ("swap") .when(x.read > y.read && is_active) {
+        x.write(y.read)
+        y.write(x.read)
     }
 
-    rule ("subtract") .when(x <= y && is_active) {
-        y := y - x
+    rule ("subtract") .when(x.read <= y.read && is_active) {
+        y.write(y.read - x.read)
     }
 
     action ("start") .arg("a", UInt(width.W)) .arg("b", UInt(width.W)) .when(!is_active) {
-        x := arg("a")
-        y := arg("b")
+        x.write(arg("a"))
+        y.write(arg("b"))
     }
 
     value ("result", UInt(width.W)) .when(!is_active) {
-        x
+        x.read
     }
 
     end
