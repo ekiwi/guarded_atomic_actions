@@ -27,5 +27,9 @@ class GuardedAtomicActionGcd(width: Int) extends GaaModule {
         x.read
     }
 
-    end(schedule_one_rule_at_a_time)
+
+    // time for 255*255 = 65025 tests
+       end(schedule_one_rule_at_a_time)                                    // 1708470 cycles
+    // end(schedule_all_rules())                                           // 1399330 cycles
+    // end(schedule_all_rules(Seq("start", "swap", "subtract", "result"))) // 1334560 cycles
 }

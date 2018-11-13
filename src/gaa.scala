@@ -206,7 +206,7 @@ class GaaModule extends Module {
 
     def schedule_all_rules(order: Seq[String] = Seq.empty[String])(): Unit = {
         val rr = if(order.isEmpty) { this.rules } else {
-            assert(order.length == _state.length)
+            assert(order.length == rules.length)
             order.map(find_rule)
         }
 
