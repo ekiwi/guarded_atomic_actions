@@ -65,7 +65,9 @@ class Value(parent: GaaModule, _name: String, typ: Data) extends RuleBase(parent
     // TODO: make more type safe by concretizing Data
     def when(cond: => Bool)(block: => Data) = {
         start(cond)
-        chisel3.when(firing){bits := block}
+        chisel3.when(firing){
+            bits := block
+        }
         end
     }
 
@@ -128,6 +130,10 @@ class GaaModule extends Module {
         r
     }
 
+    private def find_rule(name: String): RuleBase = {
+        rules.filter(r => r.name == name).head
+    }
+
     private[gaa] var _state : Array[State[Data]] = Array.empty[State[Data]]
 
     def Reg[D<:Data](name: String, typ: D) = {
@@ -165,12 +171,18 @@ class GaaModule extends Module {
         }
     }
 
-    private def make_scheduler: Unit = {
+    private def modifies_state(rule: RuleBase): Boolean = rule match {
+        case _: Value => false
+        case _ => true
+    }
+
+    private def not_a_method(rule: RuleBase): Boolean = rule match {
+        case _: Rule => true
+        case _ => false
+    }
+
+    def schedule_one_rule_at_a_time(): Unit = {
         // connect rule inputs and outputs
-        def modifies_state(rule: RuleBase): Boolean = rule match {
-            case _: Value => false
-            case _ => true
-        }
         for (rule <- rules) {
             rule.state_in.zip(_state).foreach { case (in, st) => in := st.reg }
             if (modifies_state(rule)) {
@@ -190,6 +202,27 @@ class GaaModule extends Module {
         }
         val firing = priority_scheduler(can_will.map(_._1))
         can_will.map(_._2).zip(firing).foreach{case (lhs: Bool, rhs: Bool) => lhs := rhs}
+    }
+
+    def schedule_all_rules(order: Seq[String] = Seq.empty[String])(): Unit = {
+        val rr = if(order.isEmpty) { this.rules } else {
+            assert(order.length == _state.length)
+            order.map(find_rule)
+        }
+
+        // chain rules
+        var state : Seq[Data] = _state.map(_.reg)
+        for(rule <- rr) {
+            rule.state_in.zip(state).foreach { case (in, st) => in := st }
+            state = rule.state_out
+        }
+        _state.map(_.reg).zip(state).foreach { case (in, st) => in := st }
+
+        // all rules fire when they can
+        for(rule <- rr.filter(not_a_method)) {
+            rule.firing := rule.can_fire
+        }
+
     }
 
     private def make_io : chisel3.Record = {
@@ -214,8 +247,8 @@ class GaaModule extends Module {
         }
     }
 
-    def end = {
-        make_scheduler
+    def end(scheduler: () => Unit) = {
+        scheduler()
         eval_io
         connect_io
     }

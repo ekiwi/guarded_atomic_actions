@@ -27,5 +27,5 @@ class GuardedAtomicActionGcd(width: Int) extends GaaModule {
         x.read
     }
 
-    end
+    end(schedule_one_rule_at_a_time)
 }
