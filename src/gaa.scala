@@ -14,21 +14,48 @@ object ListBundle {
     }
 }
 
+private[gaa] case class State(name: String, reg: Data)
+
 abstract class RuleBase(parent: GaaModule, _name: String) {
     val name = _name
     val firing = Wire(Bool()).suggestName(s"${name}_firing")
     val can_fire = Wire(Bool()).suggestName(s"${name}_can_fire")
 
+    def make_wires(prefix: String) = parent._state.map{
+        case State(s_name, reg) => Wire(reg.cloneType).suggestName(s"${name}_${prefix}${s_name}")
+    }
+    val state_in = make_wires("in_")
+    val state_tmp = make_wires("")
+    val state_out = make_wires("out_")
+
     def implies(a: Bool, b: Bool) : Bool = !a || b
     assert(implies(firing, can_fire))
+
+    private def connect_in = {
+        state_tmp.zip(state_in).foreach { case (tmp, in) => tmp := in }
+    }
+
+    private def connect_out = {
+        state_tmp.zip(state_out).foreach { case (tmp, out) => out := tmp }
+    }
+
+    protected def start(cond: => Bool) = {
+        connect_in
+        parent.active_rule = Some(this)
+        can_fire := cond
+    }
+
+    protected def end = {
+        parent.active_rule = None
+        connect_out
+    }
 }
 
 class Rule(parent: GaaModule, _name: String) extends RuleBase(parent, _name) {
     def when(cond: => Bool)(block: => Unit) = {
-        parent.active_rule = Some(this)
-        can_fire := cond
+        start(cond)
         chisel3.when(firing)(block)
-        parent.active_rule = None
+        end
     }
 }
 
@@ -42,10 +69,9 @@ class Value(parent: GaaModule, _name: String, typ: Data) extends RuleBase(parent
 
     // TODO: make more type safe by concretizing Data
     def when(cond: => Bool)(block: => Data) = {
-        parent.active_rule = Some(this)
-        can_fire := cond
+        start(cond)
         chisel3.when(firing){bits := block}
-        parent.active_rule = None
+        end
     }
 
     def make_io = {
@@ -75,10 +101,9 @@ class Action(parent: GaaModule, _name: String) extends RuleBase(parent, _name) {
     }
 
     def when(cond: => Bool)(block: => Unit) = {
-        parent.active_rule = Some(this)
-        can_fire := cond
+        start(cond)
         chisel3.when(firing)(block)
-        parent.active_rule = None
+        end
     }
 
     def make_io = {
@@ -108,17 +133,18 @@ class GaaModule extends Module {
         r
     }
 
-    private var _state : Array[Data] = Array.empty[Data]
+
+    private[gaa] var _state : Array[State] = Array.empty[State]
 
     def register_state[D<:Data](name: String, reg: D): Int = {
         reg.suggestName(name)
         val index = _state.length
-        _state = _state ++ Array(reg.asInstanceOf[Data])
+        _state = _state ++ Array(State(name, reg.asInstanceOf[Data]))
         index
     }
 
-    def state[D<:Data](index: Int, _match: D) : D = {
-        _state(index).asInstanceOf[D]
+    def get_state[D<:Data](index: Int, _match: D) : D = {
+        active_rule.get.state_tmp(index).asInstanceOf[D]
     }
 
     def rule(name: String)= {
@@ -139,7 +165,16 @@ class GaaModule extends Module {
         }
     }
 
-    private def make_scheduler(): Unit = {
+    private def make_scheduler: Unit = {
+        // connect rule inputs and outputs
+        for (rule <- rules) {
+            rule.state_in.zip(_state).foreach{ case (in, st) => in := st.reg }
+            chisel3.when(rule.firing) {
+                rule.state_out.zip(_state).foreach{ case (out, st) => st.reg := out }
+            }
+        }
+
+        // schedule one rule at a time
         val can_will = rules.flatMap{
             case r : Rule => Some((r.can_fire, r.firing))
             case _ => None
@@ -173,7 +208,7 @@ class GaaModule extends Module {
         }
     }
 
-    def end() = {
+    def end = {
         make_scheduler
         eval_io
         connect_io

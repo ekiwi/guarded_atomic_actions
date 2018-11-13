@@ -7,15 +7,15 @@ class GuardedAtomicActionGcd(width: Int) extends GaaModule {
     // TODO: write a macro
     private val _x_reg = Reg(UInt(width.W))
     private val _x_index = register_state("x", _x_reg)
-    def x = state(_x_index, _x_reg)
+    def x = get_state(_x_index, _x_reg)
 
     private val _y_reg = RegInit(0.U(width.W))
     private val _y_index = register_state("y", _y_reg)
-    def y = state(_y_index, _y_reg)
+    def y = get_state(_y_index, _y_reg)
 
 
     // helper expression
-    val is_active : Bool = y =/= 0.U
+    def is_active : Bool = y =/= 0.U
 
     rule ("swap") .when(x > y && is_active) {
         x := y
