@@ -13,3 +13,6 @@
 *.v
 *.fir
 *.json
+
+# treadle
+*.vcd

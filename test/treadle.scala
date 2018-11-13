@@ -2,16 +2,20 @@
 // https://github.com/freechipsproject/treadle#use-the-tester-metaphor
 
 import chisel3._
-import treadle.TreadleTester
+import treadle.{TreadleTester, TreadleOptionsManager}
 import org.scalatest.{Matchers, FlatSpec}
 
 
 class TreadleUsageSpec extends FlatSpec with Matchers {
 
+    val options = new TreadleOptionsManager {
+        treadleOptions = treadleOptions.copy(writeVCD = false)
+    }
+
     "GCD" should "return correct values for a range of inputs" in {
         val s = Driver.emit(() => new GuardedAtomicActionGcd(8))
 
-        val tester = new TreadleTester(s)
+        val tester = new TreadleTester(s, options)
 
         tester.reset(1)
         tester.poke("io_start_valid", 0)
