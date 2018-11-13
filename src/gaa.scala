@@ -167,10 +167,16 @@ class GaaModule extends Module {
 
     private def make_scheduler: Unit = {
         // connect rule inputs and outputs
+        def modifies_state(rule: RuleBase): Boolean = rule match {
+            case _: Value => false
+            case _ => true
+        }
         for (rule <- rules) {
-            rule.state_in.zip(_state).foreach{ case (in, st) => in := st.reg }
-            chisel3.when(rule.firing) {
-                rule.state_out.zip(_state).foreach{ case (out, st) => st.reg := out }
+            rule.state_in.zip(_state).foreach { case (in, st) => in := st.reg }
+            if (modifies_state(rule)) {
+                chisel3.when(rule.firing) {
+                    rule.state_out.zip(_state).foreach { case (out, st) => st.reg := out }
+                }
             }
         }
 
